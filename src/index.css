@@ -1,0 +1,23 @@
+:root { --ink:#0F1B2D; --muted:#51607A; --line:#D5DBE5; --bg:#F3F5F7; --blue:#1D4ED8; --green:#166534; --red:#B91C1C; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,sans-serif; font-size:16px; }
+.centro { text-align:center; padding:48px 20px; }
+.pantalla { max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; background:var(--bg); }
+.cabecera { background:var(--ink); color:#fff; padding:calc(20px + env(safe-area-inset-top)) 20px 20px; }
+.cabecera h1 { margin:4px 0 0; font-size:24px; }
+.sub { margin:0; font-size:13px; color:#C7D2E5; }
+.cuerpo { display:flex; flex-direction:column; gap:16px; padding:20px; flex:1; }
+label { display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:600; }
+input { height:48px; border:1px solid #7B8798; border-radius:10px; padding:0 14px; font:inherit; font-size:16px; background:#fff; color:var(--ink); }
+button { font:inherit; cursor:pointer; border-radius:12px; }
+.primario { height:56px; border:0; background:var(--blue); color:#fff; font-size:17px; font-weight:700; }
+.primario:disabled { opacity:.6; }
+.secundario { height:48px; border:2px solid var(--blue); background:#fff; color:var(--blue); font-size:15px; font-weight:600; margin-top:auto; }
+.tarjeta { display:flex; flex-direction:column; gap:2px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
+.tarjeta strong { font-size:17px; margin-bottom:10px; }
+.etiqueta { font-size:13px; color:var(--muted); }
+.error { margin:0; color:var(--red); font-size:14px; font-weight:600; }
+.aviso { margin:0; background:#FEF3C7; color:#92400E; border-radius:10px; padding:12px 14px; font-weight:600; }
+.ok { margin:0; color:var(--green); font-size:14px; font-weight:600; }
+.nota { margin:0; font-size:13px; color:var(--muted); }
+:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }

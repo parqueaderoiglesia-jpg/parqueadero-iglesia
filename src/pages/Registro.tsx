@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { useTurno } from '../lib/turno'
 import { celularValido, limpiarCelular, limpiarPlaca } from '../lib/util'
 import Cabecera from '../components/Cabecera'
+import Adjuntar from '../components/Adjuntar'
+import { subir, type Preparado } from '../lib/media'
 
 function mensaje(codigo?: string) {
   if (codigo === '23505') return 'Este vehículo ya está registrado en este servicio y todavía no ha salido.'
@@ -24,6 +26,8 @@ export default function Registro() {
   const [conocido, setConocido] = useState(false)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [adjuntos, setAdjuntos] = useState<Preparado[]>([])
+  const [progreso, setProgreso] = useState('')
 
   useEffect(() => {
     if (placa.length < 5) { setConocido(false); return }
@@ -63,9 +67,15 @@ export default function Registro() {
       p_servicio_id: servicioId,
       p_parqueadero_id: parqueaderoId,
     })
+    if (r.error) { setEnviando(false); return setError(mensaje(r.error.code)) }
+    const registroId = r.data as string
+    let fallos = 0
+    for (let i = 0; i < adjuntos.length; i++) {
+      setProgreso(`Subiendo archivo ${i + 1} de ${adjuntos.length}…`)
+      if (!(await subir(registroId, adjuntos[i]))) fallos++
+    }
     setEnviando(false)
-    if (r.error) return setError(mensaje(r.error.code))
-    nav('/lista')
+    nav(fallos ? `/vehiculo/${registroId}` : '/lista', { state: fallos ? { fallos } : undefined })
   }
 
   return (
@@ -102,7 +112,19 @@ export default function Registro() {
           Observaciones de entrada (opcional)
           <textarea value={obs} maxLength={1000} placeholder="Rayones, objetos a la vista…" onChange={(e) => setObs(e.target.value)} />
         </label>
-        <p className="nota">Las fotos y el video se agregan en la siguiente etapa.</p>
+        <span className="titulo-grupo">Fotos y video (opcional)</span>
+        <Adjuntar deshabilitado={enviando} onListos={(n) => setAdjuntos((a) => [...a, ...n].slice(0, 8))} />
+        {adjuntos.length > 0 && (
+          <div className="miniaturas">
+            {adjuntos.map((a) => (
+              <div className="mini" key={a.id}>
+                {a.tipo === 'foto' ? <img src={a.preview} alt="Foto adjunta" /> : <video src={a.preview} muted playsInline />}
+                <button type="button" aria-label="Quitar archivo" disabled={enviando} onClick={() => setAdjuntos((x) => x.filter((y) => y.id !== a.id))}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {progreso && <p className="nota">{progreso}</p>}
         {error && <p className="error" role="alert">{error}</p>}
         <button className="primario" type="submit" disabled={enviando}>{enviando ? 'Registrando…' : 'Registrar entrada'}</button>
       </form>

@@ -6,41 +6,70 @@ import Cabecera from '../components/Cabecera'
 
 type Reg = {
   id: string; hora_entrada: string; hora_salida: string | null; deja_llaves: boolean
-  ubicacion_llaves: string | null; observaciones: string | null
+  ubicacion_llaves: string | null
   v: { placa: string; propietario: string | null; celular: string | null }
 }
+type Obs = { id: string; tipo: 'entrada' | 'salida' | 'nota'; texto: string; autor_nombre: string; created_at: string }
+
+const TIPOS = { entrada: 'Entrada', salida: 'Salida', nota: 'Nota' }
+const COLOR = { entrada: 'verde', salida: 'gris', nota: 'ambar' }
+const cuando = (iso: string) =>
+  new Date(iso).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' })
 
 export default function Detalle() {
   const { id } = useParams()
   const [r, setR] = useState<Reg | null>(null)
-  const [obs, setObs] = useState('')
+  const [historial, setHistorial] = useState<Obs[]>([])
+  const [saliendo, setSaliendo] = useState(false)
+  const [textoSalida, setTextoSalida] = useState('')
+  const [nota, setNota] = useState('')
+  const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState('')
   const [aviso, setAviso] = useState('')
   const [cargando, setCargando] = useState(true)
 
   const cargar = useCallback(async () => {
-    const q = await supabase
-      .from('registros')
-      .select('id,hora_entrada,hora_salida,deja_llaves,ubicacion_llaves,observaciones,vehiculos(placa,propietario,celular)')
-      .eq('id', id!)
-      .single()
+    const [q, h] = await Promise.all([
+      supabase
+        .from('registros')
+        .select('id,hora_entrada,hora_salida,deja_llaves,ubicacion_llaves,vehiculos(placa,propietario,celular)')
+        .eq('id', id!)
+        .single(),
+      supabase
+        .from('observaciones')
+        .select('id,tipo,texto,autor_nombre,created_at')
+        .eq('registro_id', id!)
+        .order('created_at', { ascending: true }),
+    ])
     setCargando(false)
     if (q.error || !q.data) { setError('No se encontró este registro o no tienes acceso a él.'); return }
     const d = q.data as any
     setR({ ...d, v: Array.isArray(d.vehiculos) ? d.vehiculos[0] : d.vehiculos })
-    setObs(d.observaciones ?? '')
+    setHistorial((h.data ?? []) as Obs[])
   }, [id])
 
   useEffect(() => { cargar() }, [cargar])
 
-  async function cambiar(cambios: Record<string, unknown>, ok: string) {
-    setError(''); setAviso('')
-    const u = await supabase.from('registros').update(cambios).eq('id', id!)
-    if (u.error) { setError('No se pudo guardar el cambio. Inténtalo de nuevo.'); return }
+  async function ejecutar(accion: () => PromiseLike<{ error: { code?: string } | null }>, ok: string, alExito?: () => void) {
+    setError(''); setAviso(''); setOcupado(true)
+    const res = await accion()
+    setOcupado(false)
+    if (res.error) {
+      setError(res.error.code === '23505'
+        ? 'Este vehículo ya tiene otro registro abierto en este servicio, por eso no se puede deshacer la salida.'
+        : 'No se pudo guardar el cambio. Revisa tu conexión e inténtalo de nuevo.')
+      return
+    }
     setAviso(ok)
+    alExito?.()
     cargar()
   }
-  const salida = () => cambiar({ hora_salida: new Date(Math.max(Date.now(), Date.parse(r!.hora_entrada))).toISOString() }, 'Salida registrada.')
+
+  const confirmarSalida = () =>
+    ejecutar(() => supabase.rpc('marcar_salida', { p_registro_id: id, p_observacion: textoSalida.trim() || null }), 'Salida registrada.', () => { setSaliendo(false); setTextoSalida('') })
+  const deshacer = () => ejecutar(() => supabase.rpc('deshacer_salida', { p_registro_id: id }), 'Salida deshecha.')
+  const agregarNota = () =>
+    ejecutar(() => supabase.from('observaciones').insert({ registro_id: id, tipo: 'nota', texto: nota.trim() }), 'Observación agregada al historial.', () => setNota(''))
 
   if (cargando) return <p className="centro">Cargando…</p>
   return (
@@ -61,22 +90,45 @@ export default function Detalle() {
               <span className="etiqueta">Estado</span>
               <strong>{r.hora_salida ? `Salió a las ${hora(r.hora_salida)}` : 'Dentro del parqueadero'}</strong>
             </div>
-            <div className="dos">
-              {r.v?.celular && <a className="secundario enlace" href={`tel:${r.v.celular}`}>Llamar</a>}
-              {r.hora_salida
-                ? <button className="secundario" type="button" onClick={() => cambiar({ hora_salida: null }, 'Salida deshecha.')}>Deshacer salida</button>
-                : <button className="secundario" type="button" onClick={salida}>Marcar salida</button>}
-            </div>
             {r.deja_llaves && (
               <div className="aviso"><b>Deja llaves</b><br />{r.ubicacion_llaves ?? 'Sin ubicación indicada'}</div>
             )}
-            <label>
-              Observaciones
-              <textarea value={obs} maxLength={1000} onChange={(e) => setObs(e.target.value)} />
-            </label>
-            <button className="secundario" type="button" disabled={obs === (r.observaciones ?? '')} onClick={() => cambiar({ observaciones: obs.trim() || null }, 'Observaciones guardadas.')}>
-              Guardar observaciones
-            </button>
+            <div className="dos">
+              {r.v?.celular && <a className="secundario enlace" href={`tel:${r.v.celular}`}>Llamar</a>}
+              {r.hora_salida
+                ? <button className="secundario" type="button" disabled={ocupado} onClick={deshacer}>Deshacer salida</button>
+                : <button className="secundario" type="button" disabled={ocupado || saliendo} onClick={() => setSaliendo(true)}>Marcar salida</button>}
+            </div>
+            {saliendo && (
+              <div className="panel">
+                <label>
+                  Observación de salida (opcional)
+                  <textarea value={textoSalida} maxLength={1000} placeholder="Ej.: sale sin novedad" onChange={(e) => setTextoSalida(e.target.value)} />
+                </label>
+                <button className="primario" type="button" disabled={ocupado} onClick={confirmarSalida}>Confirmar salida</button>
+                <button className="secundario" type="button" disabled={ocupado} onClick={() => setSaliendo(false)}>Cancelar</button>
+              </div>
+            )}
+            <h2 className="sec">Historial de observaciones</h2>
+            <ol className="historial">
+              {historial.map((o) => (
+                <li key={o.id}>
+                  <div className="enc">
+                    <span className={`badge ${COLOR[o.tipo]}`}>{TIPOS[o.tipo]}</span>
+                    <span className="detalle">{cuando(o.created_at)}{o.autor_nombre ? ` · ${o.autor_nombre}` : ''}</span>
+                  </div>
+                  <p>{o.texto}</p>
+                </li>
+              ))}
+              {historial.length === 0 && <p className="nota">Todavía no hay observaciones en este registro.</p>}
+            </ol>
+            <div className="panel">
+              <label>
+                Agregar observación
+                <textarea value={nota} maxLength={1000} placeholder="Ej.: se avisó al propietario" onChange={(e) => setNota(e.target.value)} />
+              </label>
+              <button className="secundario" type="button" disabled={ocupado || !nota.trim()} onClick={agregarNota}>Agregar al historial</button>
+            </div>
           </>
         )}
       </section>

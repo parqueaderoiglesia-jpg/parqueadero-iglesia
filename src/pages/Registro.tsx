@@ -99,7 +99,7 @@ export default function Registro() {
           </label>
         )}
         <label>
-          Observaciones
+          Observaciones de entrada (opcional)
           <textarea value={obs} maxLength={1000} placeholder="Rayones, objetos a la vista…" onChange={(e) => setObs(e.target.value)} />
         </label>
         <p className="nota">Las fotos y el video se agregan en la siguiente etapa.</p>

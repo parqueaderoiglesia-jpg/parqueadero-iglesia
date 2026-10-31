@@ -6,18 +6,47 @@ body { margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sys
 .cabecera { background:var(--ink); color:#fff; padding:calc(20px + env(safe-area-inset-top)) 20px 20px; }
 .cabecera h1 { margin:4px 0 0; font-size:24px; }
 .sub { margin:0; font-size:13px; color:#C7D2E5; }
+.volver { display:inline-block; color:#fff; font-size:14px; font-weight:600; margin-bottom:8px; text-decoration:none; padding:6px 0; }
 .cuerpo { display:flex; flex-direction:column; gap:16px; padding:20px; flex:1; }
 label { display:flex; flex-direction:column; gap:6px; font-size:14px; font-weight:600; }
-input { height:48px; border:1px solid #7B8798; border-radius:10px; padding:0 14px; font:inherit; font-size:16px; background:#fff; color:var(--ink); }
-button { font:inherit; cursor:pointer; border-radius:12px; }
-.primario { height:56px; border:0; background:var(--blue); color:#fff; font-size:17px; font-weight:700; }
-.primario:disabled { opacity:.6; }
-.secundario { height:48px; border:2px solid var(--blue); background:#fff; color:var(--blue); font-size:15px; font-weight:600; margin-top:auto; }
+input, select, textarea { min-height:48px; border:1px solid #7B8798; border-radius:10px; padding:0 14px; font:inherit; font-size:16px; background:#fff; color:var(--ink); width:100%; }
+textarea { min-height:96px; padding:12px 14px; resize:vertical; }
+.placa-input { height:64px; font-size:28px; font-weight:700; letter-spacing:3px; text-transform:uppercase; }
+button, .enlace { font:inherit; cursor:pointer; border-radius:12px; text-decoration:none; display:flex; align-items:center; justify-content:center; }
+.primario { height:56px; border:0; background:var(--blue); color:#fff; font-size:17px; font-weight:700; width:100%; }
+.primario:disabled { opacity:.5; cursor:not-allowed; }
+.secundario { height:48px; border:2px solid var(--blue); background:#fff; color:var(--blue); font-size:15px; font-weight:600; width:100%; }
+.secundario:disabled { opacity:.5; cursor:not-allowed; }
+.dos { display:flex; gap:10px; }
+.grupo { display:flex; flex-direction:column; gap:10px; }
+.titulo-grupo { font-size:14px; font-weight:600; }
+.opcion { width:100%; min-height:64px; flex-direction:column; align-items:flex-start; padding:10px 16px; background:#fff; border:1px solid #7B8798; color:var(--ink); text-align:left; display:flex; border-radius:12px; }
+.opcion span { font-size:13px; color:var(--muted); font-weight:400; }
+.opcion.activa { border:3px solid var(--blue); background:#EAF0FF; }
+.stats { display:flex; gap:10px; }
+.stat { flex:1; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 14px; display:flex; flex-direction:column; }
+.stat b { font-size:26px; }
+.stat span { font-size:13px; color:var(--muted); }
+.chips { display:flex; gap:8px; flex-wrap:wrap; }
+.chip { height:40px; padding:0 16px; border-radius:99px; border:1px solid #7B8798; background:#fff; color:var(--ink); font-size:14px; font-weight:600; }
+.chip[aria-pressed="true"] { background:var(--ink); color:#fff; border-color:var(--ink); }
+.chip.grande { flex:1; height:48px; border-radius:10px; }
+.chip.grande[aria-pressed="true"] { background:var(--blue); border-color:var(--blue); }
+.lista { display:flex; flex-direction:column; gap:10px; }
+.fila { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:10px; color:var(--ink); text-decoration:none; }
+.placa { font-size:19px; font-weight:700; letter-spacing:1px; }
+.detalle { font-size:14px; color:var(--muted); }
+.etiquetas { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.badge { font-size:12px; font-weight:700; padding:3px 8px; border-radius:99px; white-space:nowrap; }
+.badge.verde { background:#DCFCE7; color:#166534; }
+.badge.ambar { background:#FEF3C7; color:#92400E; }
+.badge.gris { background:#E5E9F0; color:#3B475C; }
 .tarjeta { display:flex; flex-direction:column; gap:2px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px; }
 .tarjeta strong { font-size:17px; margin-bottom:10px; }
 .etiqueta { font-size:13px; color:var(--muted); }
 .error { margin:0; color:var(--red); font-size:14px; font-weight:600; }
 .aviso { margin:0; background:#FEF3C7; color:#92400E; border-radius:10px; padding:12px 14px; font-weight:600; }
 .ok { margin:0; color:var(--green); font-size:14px; font-weight:600; }
+.caja-ok { background:#DCFCE7; border-radius:10px; padding:12px 14px; }
 .nota { margin:0; font-size:13px; color:var(--muted); }
 :focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
